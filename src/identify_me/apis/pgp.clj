@@ -1,6 +1,6 @@
 (ns identify-me.apis.pgp
   (:require [clj-http.client :as http]
-            [clojure.string :refer [split split-lines]]
+ [clojure.string :refer [split split-lines]]
             [clj-time.core :as time]
             [clj-time.coerce :as coerce]
             [clj-time.format :as tformat]
@@ -96,8 +96,11 @@
       (parse-body (:body response)))))
 
 (defn derive-user
-  [{emails :emails, names :names, screen-names :screen-names}]
-  (cond
-   (not-empty emails) (apply set/union (map get-user emails))
-   (not-empty names) (apply set/union (map get-user names))
-   :else (apply set/union (map get-user screen-names))))
+  [{emails :email, names :name, screen-names :screen_name}]
+  (let [keys (apply set/union (map get-user emails))]
+    (if (empty? keys)
+      (let [keys (apply set/union (map get-user screen-names))]
+        (if (empty? keys)
+          (apply set/union (map get-user names))
+          keys))
+      keys)))
