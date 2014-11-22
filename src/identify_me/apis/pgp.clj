@@ -3,7 +3,8 @@
             [clojure.string :refer [split split-lines]]
             [clj-time.core :as time]
             [clj-time.coerce :as coerce]
-            [clj-time.format :as tformat]))
+            [clj-time.format :as tformat]
+            [clojure.set :as set]))
 
 (defn- parse-info-line
   [line]
@@ -75,7 +76,7 @@
   (let [dataz (->> body
                    split-lines
                    (map #(split % #":")))]
-    (loop [keys [], lines dataz]
+    (loop [keys #{}, lines dataz]
       (if (= (ffirst lines) "pub")
         (recur (conj keys (parse-key lines))
                (rest lines))
@@ -85,7 +86,7 @@
 
 (defn get-user
   [search]
-  (let [response (http/get "https://hkps.pool.sks-keyservers.net/pks/lookup"
+  (let [response (http/get "http://hkps.pool.sks-keyservers.net/pks/lookup"
                            {:insecure? true,        ; TODO: fix CA path
                             :query-params {:options "mr",
                                            :op "index",
@@ -93,3 +94,10 @@
                             :throw-exceptions false})]
     (when (= (:status response) 200)
       (parse-body (:body response)))))
+
+(defn derive-user
+  [{emails :emails, names :names, screen-names :screen-names}]
+  (cond
+   (not-empty emails) (apply set/union (map get-user emails))
+   (not-empty names) (apply set/union (map get-user names))
+   :else (apply set/union (map get-user screen-names))))
