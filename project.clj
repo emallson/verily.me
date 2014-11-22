@@ -8,7 +8,9 @@
                  [ring/ring-json "0.3.1"]
                  [org.clojure/data.json "0.2.5"]
                  [clj-http "1.0.1"]
-                 [clj-time "0.8.0"]]
+                 [clj-time "0.8.0"]
+                 [korma "0.3.0"]
+                 [org.postgresql/postgresql "9.2-1002-jdbc4"]]
   :plugins [[lein-ring "0.8.13"]]
   :main identify-me.handler
   :ring {:handler identify-me.handler/app}
