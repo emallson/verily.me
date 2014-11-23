@@ -9,7 +9,8 @@
             [identify-me.apis.twitter :as twitter]
             [identify-me.apis.hkp :as hkp]
             [identify-me.apis.generics :refer [identify combine]]
-            [identify-me.signatures :refer [list-signatures list-identities]]))
+            [identify-me.signatures :refer [list-signatures list-identities]]
+            [identify-me.templates :as templates]))
 
 (defn identity-by-name
   [name]
@@ -23,7 +24,7 @@
             :twitter twitter,
             :pgp hkp}}))
 
-(defroutes app-routes
+(defroutes api-routes
   (GET "/" [] "Hello World")
   (GET "/api/user/:name/infer" [name] (identity-by-name name))
   (GET "/api/user/:service/:name/signatures"
@@ -34,9 +35,20 @@
     {:body (list-identities key-id)})
   (POST "/api/user/:service/:name/signatures"
       {{service :service, name :name} :params, body :body}
-    {:body (hkp/sign-identities service name body)})
-  (route/not-found "Not Found"))
+    {:body (hkp/sign-identities service name body)}))
+
+(defroutes web-routes
+  (GET "/key/:key-id/identities"
+      [key-id]
+    (templates/identities (list-identities key-id)))
+  (GET "/user/:service/:name/signatures"
+      [service name]
+    (templates/identities (list-signatures service name))))
+
+(defroutes allroutes
+  (wrap-json-response api-routes)
+  web-routes
+  (route/not-found "Not found"))
 
 (def app
-  (-> (handler/api app-routes)
-      wrap-json-response))
+  (handler/api allroutes))
