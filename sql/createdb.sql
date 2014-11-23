@@ -1,12 +1,13 @@
-create table Signatures(
-       key_id varchar(40) primary key,
-       signature text
+create table Proofs(
+       id bigserial primary key,
+       proof text
 );
 
 create table Identities(
        service varchar(30),
        identifier varchar(30),
-       key_id varchar(40) references Signatures(key_id),
+       key_id varchar(40),
+       proof_id bigint references Proofs(id),
        primary key (service, identifier, key_id)
 );
 

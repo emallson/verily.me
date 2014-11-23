@@ -1,10 +1,12 @@
-(ns identify-me.apis.pgp
+(ns identify-me.apis.hkp
   (:require [clj-http.client :as http]
- [clojure.string :refer [split split-lines]]
+            [clojure.string :refer [split split-lines]]
             [clj-time.core :as time]
             [clj-time.coerce :as coerce]
             [clj-time.format :as tformat]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [mvxcvi.crypto.pgp :as pgp]
+            [identify-me.signatures :refer [insert-signature]]))
 
 (defn- parse-info-line
   [line]
@@ -104,3 +106,23 @@
           (apply set/union (map get-user names))
           keys))
       keys)))
+
+(defn recv-keys
+  [key-id]
+  (let [response (http/get "http://hkps.pool.sks-keyservers.net/pks/lookup"
+                           {:query-params {:options "mr",
+                                           :op "get",
+                                           :search (str "0x" key-id)}})]
+    (if (= (:status response) 200)
+      (first (pgp/decode (:body response))))))
+
+(defn sign-identities
+  [service name binary-data]
+  (when-let [signature (pgp/decode-signature binary-data)]
+    (let [key-id (Long/toHexString (pgp/key-id signature))]
+      (when-let [keylist (recv-keys key-id)]
+        (let [pubkey (pgp/get-public-key keylist key-id),
+              masterkey (first (filter (comp :master-key? pgp/key-info) (pgp/list-public-keys keylist))),
+              master-key-id (Long/toHexString (pgp/key-id masterkey))]
+          (when (pgp/verify (str service "/" name "\n") signature pubkey)
+            (insert-signature service name master-key-id (pgp/encode-ascii signature))))))))
