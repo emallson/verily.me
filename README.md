@@ -1,19 +1,5 @@
-# identify.me
+# verily.me
 
-FIXME
+Hackathon project, attempting to allow PGP/GPG authentication of social media accounts.
 
-## Prerequisites
-
-You will need [Leiningen][] 2.0.0 or above installed.
-
-[leiningen]: https://github.com/technomancy/leiningen
-
-## Running
-
-To start a web server for the application, run:
-
-    lein ring server
-
-## License
-
-Copyright © 2014 FIXME
+Original name was identify.me, domain is sadly taken :( Haven't updated the code.
